@@ -14,14 +14,14 @@ char firmware_version[] = "0.3";                              // updated the cod
 // SETTINGS
 
 // mqtt/ace settings
-char hostname[] ="pole_1_2";                                  // the hostname for board
+char hostname[] ="pole_15_16";                                  // the hostname for board  <= REPLACE
 const char gen_topic[] = "alch";  
 const char puzzle_topic[] = "alch/centrepiece"; 
-const char module_topic[] = "alch/centrepiece/controller";
-IPAddress server(192, 168, 178, 214);                         // ip address of the mqtt/ace server
+const char module_topic[] = "alch/centrepiece/pole_15_16";      // the module name of the board <= REPLACE
+IPAddress server(192, 168, 178, 214);                         // ip address of the mqtt/ace server <= REPLACE
 
 // controller settings
-const int DEBUG = 3;                                          // debugging on serial 0 = no messages, 1 = touch messages, 2 = mqtt messsages, 3 = both
+const int DEBUG = 2;                                          // debugging on serial 0 = no messages, 1 = touch messages, 2 = mqtt messsages, 3 = both
 const int sample_amount = 3;                                  // the amount of samples to check the median
 const int touch_treshold = 10;                                // the number below which touch will be recognised   
 
@@ -97,7 +97,7 @@ void pubMsg_kb(const char * method, const char *param1, const char *val1, const 
   else if (strcmp(param1,nullptr) && strcmp(val1,nullptr) ){
     memset(arg1, 0, 50);
   }  
-//strcmp(a,"ab")==0
+
   if (param2 && val2){
     if (val2[0]=='{' || val2[0]=='['){
       sprintf(arg2, ",\"%s\":%s", param2, val2); 
@@ -397,8 +397,9 @@ uint16_t _otaTimeout = 15000;
 int contentLength = 0;
 bool isValidContentType = false;
 
-String host = "192.168.178.215"; // FINAL CHANGE to right server address 
-int port = 8888; // Non https. For HTTPS 443.  HTTPS doesn't work yet
+
+String host = server.toString(); // FINAL CHANGE to right server address
+int port = 80; // Non https. For HTTPS 443.  HTTPS doesn't work yet
 
 String bin; // bin file name with a slash in front.
 
@@ -626,7 +627,9 @@ void commandCallback(int meth, int cmd, const char value[], int triggerID)
     case INFO_SYSTEM:
       dbf("system info requested\n");
       char system[200];
-      sprintf(system, "{ \"ip\": \"%s\", \"MAC\": \"%s\", \"firmware\": \"%s\" }", ETH.localIP(), ETH.macAddress(), firmware_version);
+      Serial.println(ETH.localIP().toString());
+      Serial.println(ETH.macAddress());
+      sprintf(system, "{ \"ip\": \"%s\", \"MAC\": \"%s\", \"firmware\": \"%s\" }", ETH.localIP().toString(), ETH.macAddress(), firmware_version);
       pubMsg_kb("info", "info", system, "trigger", "request");
         // Expects to receive back system info such as local IP ('ip'), Mac address ('mac') and Firmware Version ('fw')
       break;
@@ -659,6 +662,20 @@ void setup() {
 
   // Allow the hardware to sort itself out
   delay(1500);
+
+  /* Set the name for this controller, this should be unqiue within */
+  Sherlocked.setName(hostname);
+  /* Set callback functions for the various messages that can be received by the Sherlocked ACE system */    
+  /* Puzzle State Changes are handled here */
+  Sherlocked.setStateCallback(stateCallback);
+  /* General Command and Info Messages */
+  Sherlocked.setCommandCallback(commandCallback);
+  /* Inputs and Outputs */
+  Sherlocked.setInputCallback(inputCallback);
+  Sherlocked.setOutputCallback(outputCallback);
+  /* Catch-all callback for json messages that were not handled by other callbacks */
+  Sherlocked.setJSONCallback(jsonCallback);
+
 }
 
 
@@ -675,32 +692,29 @@ void loop() {
   bool touch_0 = median_touch(33, false);
   bool touch_4 = median_touch(32, true);
 
-//\\// 
-// OLDER ESPRESSIF CORE TRY TO AVOID KERNEL PANIC
-
   if (touch_0 == true && if_true_input_0 == false){
     if_true_input_0 = true;
     if_false_input_0 = false;
-    Serial.println("TOUCH on 3");
-    pubMsg_kb("info", "inputs", "[{\"id\":1, \"value\":1}]", "trigger", "input");
+    Serial.println("TOUCH on A");
+    pubMsg_kb("info", "inputs", "[{\"id\":15, \"value\":1}]", "trigger", "input");   // <= REPLACE
   } else if (touch_0 == false && if_false_input_0 == false) {
     if_false_input_0 = true;
     if_true_input_0 = false;
-    Serial.println("no touch on 3");
-    pubMsg_kb("info", "inputs", "[{\"id\":1, \"value\":0}]", "trigger", "input");
+    Serial.println("no touch on A");
+    pubMsg_kb("info", "inputs", "[{\"id\":15, \"value\":0}]", "trigger", "input");   // <= REPLACE
     // client.publish(pub_topic, "sensor 3 not active");
   }
   if (touch_4 == true && if_true_input_4 == false){
     if_true_input_4 = true;
     if_false_input_4 = false;    
-    Serial.println("TOUCH on 4");
-    pubMsg_kb("info", "inputs", "[{\"id\":2, \"value\":1}]", "trigger", "input");
+    Serial.println("TOUCH on B");
+    pubMsg_kb("info", "inputs", "[{\"id\":16, \"value\":1}]", "trigger", "input");   // <= REPLACE
     // client.publish(pub_topic, "sensor 4 active");
   } else if (touch_4 == false && if_false_input_4 == false) {
     if_false_input_4 = true;
     if_true_input_4 = false;    
-    Serial.println("no touch on 4");
-    pubMsg_kb("info", "inputs", "[{\"id\":2, \"value\":0}]", "trigger", "input");
+    Serial.println("no touch on B");
+    pubMsg_kb("info", "inputs", "[{\"id\":16, \"value\":0}]", "trigger", "input");   // <= REPLACE
     // client.publish(pub_topic, "sensor 4 not active");
   }
 
