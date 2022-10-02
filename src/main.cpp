@@ -124,6 +124,8 @@ void resetPuzzle(){
 
 
 // the ethernet function
+char localIP[16];
+char macAddress[18];
 void WiFiEvent(WiFiEvent_t event)
 {
   switch (event) {
@@ -135,10 +137,12 @@ void WiFiEvent(WiFiEvent_t event)
       Serial.println("ETH Connected");
       break;
     case SYSTEM_EVENT_ETH_GOT_IP:
+      ETH.localIP().toString().toCharArray(localIP, 16);
+      strncpy( macAddress, ETH.macAddress().c_str(), sizeof(macAddress) );
       Serial.print("ETH MAC: ");
-      Serial.print(ETH.macAddress());
+      Serial.print(macAddress);
       Serial.print(", IPv4: ");
-      Serial.print(ETH.localIP());
+      Serial.print(localIP);
       if (ETH.fullDuplex()) {
         Serial.print(", FULL_DUPLEX");
       }
@@ -627,9 +631,7 @@ void commandCallback(int meth, int cmd, const char value[], int triggerID)
     case INFO_SYSTEM:
       dbf("system info requested\n");
       char system[200];
-      Serial.println(ETH.localIP().toString());
-      Serial.println(ETH.macAddress());
-      sprintf(system, "{ \"ip\": \"%s\", \"MAC\": \"%s\", \"firmware\": \"%s\" }", ETH.localIP().toString(), ETH.macAddress(), firmware_version);
+      sprintf(system, "{ \"ip\": \"%s\", \"MAC\": \"%s\", \"firmware\": \"%s\" }", localIP, macAddress, firmware_version);
       pubMsg_kb("info", "info", system, "trigger", "request");
         // Expects to receive back system info such as local IP ('ip'), Mac address ('mac') and Firmware Version ('fw')
       break;
